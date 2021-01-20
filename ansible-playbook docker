@@ -1,0 +1,50 @@
+- hosts: dockerhost
+  tasks:
+  - name: “Docker repository”
+    yum_repository:
+      name: "dockkkk"
+      description: “Software from docker”
+      baseurl: https://download.docker.com/linux/centos7/x86_64/stable/
+      gpgcheck: no
+
+  - name: "installing docker software"
+    command: "yum install docker-ce --nobest -y"
+    ignore_errors: yes
+
+  - name: "creation workspace on target node"
+    file:
+      path: "/root/ansiblewebos"
+      state: directory
+
+  - name: "copying content into target node"
+    copy:
+      src: "index.html"
+      dest: "/root/ansiblewebos/"
+
+  - name: "starting docker daemon"
+    service:
+      name: "docker"
+      state: restarted
+
+  - name: "pulling httpd docker image from hub"
+    docker_image:
+      name: "sourabh4584/httpdandphp"
+      source: pull
+      state: present
+      tag: "final"
+      force_tag: yes
+
+  - name: "starting docker"
+    docker_container:
+      name: "webos"
+      image: "sourabh4584/httpdandphp:final"
+      state: started
+      tty: yes
+      detach: no
+      interactive: true
+      exposed_ports: 80
+      ports:
+      - "8080:80"
+
+  - name: "copying the webpage in docker"
+    command: "docker cp /root/ansiblewebos  webos:/var/www/html"
